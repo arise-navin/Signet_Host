@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate --schema=../prisma/schema.prisma && esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.mjs --external:@prisma/client --external:bcryptjs --external:fastify --external:@fastify/cors --external:@fastify/jwt",
+    "build": "prisma generate --schema=../prisma/schema.prisma && esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.mjs --external:dotenv --external:@prisma/client --external:bcryptjs --external:fastify --external:@fastify/cors --external:@fastify/jwt",
     "start": "node dist/index.mjs",
     "seed": "tsx ../prisma/seed.ts",
     "studio": "prisma studio --schema=../prisma/schema.prisma",
