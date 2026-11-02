@@ -22,9 +22,13 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply): 
   const path = req.url.split('?')[0];
   if (req.method === 'OPTIONS') return;
   const origin = req.headers.origin;
-  if (origin && origin !== (process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173')) {
-    reply.status(403).send({ error: 'Forbidden request origin.' });
-    return;
+  const allowedOrigin = process.env.FRONTEND_ORIGIN;
+  if (origin && allowedOrigin && allowedOrigin !== '*') {
+    const allowedList = allowedOrigin.split(',').map((o) => o.trim());
+    if (!allowedList.includes(origin) && origin !== 'http://localhost:5173') {
+      reply.status(403).send({ error: 'Forbidden request origin.' });
+      return;
+    }
   }
   // Login and health must remain usable when an old cookie has expired.
   if (publicRoutes.has(path)) return;
