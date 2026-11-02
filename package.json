@@ -10,6 +10,7 @@
     "frontend"
   ],
   "scripts": {
+    "postinstall": "prisma generate --schema=prisma/schema.prisma && npm run build --workspace=@hospital/shared --workspace=@hospital/ai-provider --workspace=@hospital/agents",
     "db": "node scripts/db.js",
     "db:seed": "npm run seed --workspace=backend",
     "db:studio": "npm run studio --workspace=backend",

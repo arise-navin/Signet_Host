@@ -286,7 +286,7 @@ export async function recommendationRoutes(fastify: FastifyInstance, aiProvider?
         },
       });
 
-      let updatedRec = null;
+      let updatedRec: any = null;
       if (recommendation) {
         updatedRec = await tx.aIRecommendation.update({
           where: { id: recommendation.id },

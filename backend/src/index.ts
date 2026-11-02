@@ -125,7 +125,9 @@ async function start() {
   }
 }
 
+export default createServer;
+
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
-if (isDirectRun) {
+if (isDirectRun || process.env.PORT || process.env.VERCEL) {
   start();
 }
