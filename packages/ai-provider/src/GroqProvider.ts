@@ -19,7 +19,7 @@ export interface GroqProviderOptions {
 }
 
 export class GroqProvider implements AIProvider {
-  private client: Groq;
+  protected client: Groq;
   private currentModel: string;
   private requestedModel: string;
   private apiKey: string;

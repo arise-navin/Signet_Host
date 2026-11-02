@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { AIProvider, GroqProvider } from '@hospital/ai-provider';
+import { AIProvider, GroqProvider, SignetProvider } from '@hospital/ai-provider';
 
 export async function settingsRoutes(fastify: FastifyInstance, aiProvider: AIProvider) {
   // Get AI engine configuration & health
@@ -7,7 +7,7 @@ export async function settingsRoutes(fastify: FastifyInstance, aiProvider: AIPro
     const health = await aiProvider.healthCheck();
 
     return {
-      provider: aiProvider instanceof GroqProvider ? 'groq' : 'ollama',
+      provider: aiProvider instanceof SignetProvider ? 'signet' : aiProvider instanceof GroqProvider ? 'groq' : 'ollama',
       baseUrl: (aiProvider as any).baseUrl || (aiProvider instanceof GroqProvider ? 'https://api.groq.com/openai/v1' : 'http://localhost:11434'),
       serverRunning: health.serverRunning,
       selectedModel: health.selectedModel,

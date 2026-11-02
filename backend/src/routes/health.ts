@@ -26,7 +26,7 @@ export async function healthRoutes(fastify: FastifyInstance, aiProvider: AIProvi
         backend: { status: 'up', uptime: process.uptime() },
         database: { status: dbConnected ? 'connected' : 'disconnected' },
         ollama: {
-          status: aiHealth.serverRunning ? (aiHealth.modelAvailable ? 'ready' : 'model_missing') : 'unreachable',
+          status: aiHealth.serverRunning ? (aiHealth.modelAvailable ? (aiHealth.ok ? 'ready' : 'blocked') : 'model_missing') : 'unreachable',
           serverRunning: aiHealth.serverRunning,
           activeModel: aiHealth.selectedModel,
           requestedModel: aiHealth.requestedModel,

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 
 import { prisma } from './db.js';
 import { authMiddleware } from './middleware/auth.js';
-import { AIProvider, GroqProvider, OllamaProvider } from '@hospital/ai-provider';
+import { AIProvider, GroqProvider, OllamaProvider, SignetProvider } from '@hospital/ai-provider';
 import {
   AgentRegistry,
   AgentRouter,
@@ -43,6 +43,14 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 export function createAIProvider(): AIProvider {
   const providerType = (process.env.AI_PROVIDER || (process.env.GROQ_API_KEY ? 'groq' : 'ollama')).toLowerCase();
+
+  if (providerType === 'signet') {
+    return new SignetProvider({
+      baseUrl: process.env.SIGNET_GATEWAY_URL || '',
+      token: process.env.SIGNET_WORKLOAD_TOKEN || '',
+      model: process.env.SIGNET_MODEL || 'gpt-oss:120b-cloud',
+    });
+  }
 
   if (providerType === 'groq' || process.env.GROQ_API_KEY) {
     return new GroqProvider({
