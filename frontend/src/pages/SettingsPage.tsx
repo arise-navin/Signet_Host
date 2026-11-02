@@ -143,7 +143,7 @@ export const SettingsPage: React.FC = () => {
             <input
               type="text"
               readOnly
-              value={settings?.requestedModel || 'beam:cloude'}
+              value={settings?.requestedModel || ''}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 font-mono outline-none"
             />
             <span className="text-[10px] text-slate-400 mt-1 block">Specified in application instructions</span>

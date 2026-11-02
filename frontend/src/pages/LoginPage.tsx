@@ -168,10 +168,11 @@ export const LoginPage: React.FC = () => {
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label htmlFor="login-identifier" className="block text-xs font-semibold text-slate-300 mb-1.5">
                     {activeTab === 'ADMIN' ? 'Username or Email' : 'Email Address'}
                   </label>
                   <input
+                    id="login-identifier"
                     type="text"
                     required
                     value={identifier}
@@ -182,9 +183,10 @@ export const LoginPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+                  <label htmlFor="login-password" className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
                   <div className="relative">
                     <input
+                      id="login-password"
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
