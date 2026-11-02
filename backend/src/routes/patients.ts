@@ -30,7 +30,7 @@ export async function patientRoutes(fastify: FastifyInstance) {
       if (!req.authUser!.doctorId) return reply.status(403).send({ error: 'Doctor profile is required.' });
       where.AND = [careRelationshipFilter(req.authUser!.doctorId)];
     }
-    const clinical = req.authUser!.role === 'PATIENT' || req.authUser!.role === 'DOCTOR';
+    const clinical = req.authUser!.role !== 'RECEPTIONIST';
     const [patients, total] = await Promise.all([
       prisma.patient.findMany({
         where,
@@ -83,7 +83,7 @@ export async function patientRoutes(fastify: FastifyInstance) {
 
     z.string().uuid().parse(id);
     await authorizeCarePatient(authUser, id, prisma);
-    const canAccessClinicalRecords = authUser.role === 'PATIENT' || authUser.role === 'DOCTOR';
+    const canAccessClinicalRecords = authUser.role !== 'RECEPTIONIST';
     if (canAccessClinicalRecords) await authorizeClinicalPatient(authUser, id, prisma);
 
     const visibleAppointments = appointmentScopeWhere(await appointmentScope(authUser, prisma));

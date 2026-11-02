@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   UserCheck,
@@ -18,7 +19,7 @@ import {
   Search,
   Plus,
 } from 'lucide-react';
-import { apiFetch } from '../api/client.js';
+import { api, apiFetch } from '../api/client.js';
 
 export const PatientDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'symptom_ai' | 'appointments' | 'doctors' | 'prescriptions' | 'labs' | 'tickets'>('symptom_ai');
@@ -31,7 +32,16 @@ export const PatientDashboardPage: React.FC = () => {
   const [submittingSymptom, setSubmittingSymptom] = useState(false);
   const [aiRecommendation, setAiRecommendation] = useState<any>(null);
   const [selectedDoctorForBooking, setSelectedDoctorForBooking] = useState<any>(null);
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+  const { data: health } = useQuery({ queryKey: ['health'], queryFn: api.getHealth });
+  const [bookingDate, setBookingDate] = useState<string>('');
+  const { data: slots, isFetching: slotsLoading, error: slotsError } = useQuery({
+    queryKey: ['doctorSlots', selectedDoctorForBooking?.id, bookingDate],
+    queryFn: () => api.getDoctorSlots(selectedDoctorForBooking.id, bookingDate),
+    enabled: Boolean(selectedDoctorForBooking && bookingDate),
+  });
+  const availableSlots: string[] = slots?.slots ?? [];
+  useEffect(() => { if (health?.hospitalTomorrow) setBookingDate(health.hospitalTomorrow); }, [health?.hospitalTomorrow]);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
@@ -76,21 +86,9 @@ export const PatientDashboardPage: React.FC = () => {
     }
   };
 
-  const handleDoctorSelect = async (doctor: any) => {
+  const handleDoctorSelect = (doctor: { id: string; name: string }): void => {
     setSelectedDoctorForBooking(doctor);
     setSelectedSlot('');
-    try {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const dateStr = tomorrow.toISOString().split('T')[0];
-      const slotData = await apiFetch(`/api/doctors/${doctor.id}/slots?date=${dateStr}`);
-      setAvailableSlots(slotData.slots || []);
-      if (slotData.slots && slotData.slots.length > 0) {
-        setSelectedSlot(slotData.slots[0]);
-      }
-    } catch (err) {
-      console.warn('Slot lookup failed:', err);
-    }
   };
 
   const handleBookRecommendedAppointment = async () => {
@@ -106,6 +104,7 @@ export const PatientDashboardPage: React.FC = () => {
         }),
       });
       setBookingSuccess(res);
+      await Promise.all(['appointments', 'patients', 'patientDetail', 'doctorSlots', 'dashboardStats'].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
       await loadPatientData();
     } catch (err) {
       alert(err instanceof Error ? err.message : String(err));
@@ -345,13 +344,22 @@ export const PatientDashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {availableSlots.length === 0 ? (
-                    <p className="text-xs text-slate-400">Loading available slots from database...</p>
+                  <label className="block text-xs text-slate-700">
+                    Appointment date
+                    <input type="date" data-testid="ai-booking-date" value={bookingDate} min={health?.hospitalToday}
+                      onChange={(event) => { setBookingDate(event.target.value); setSelectedSlot(''); }}
+                      className="block mt-1 border border-slate-200 rounded-lg p-2" />
+                  </label>
+                  {slotsError ? <p role="alert" className="text-xs text-rose-600">{slotsError.message}</p> : slotsLoading ? (
+                    <p className="text-xs text-slate-400">Loading available slots...</p>
+                  ) : availableSlots.length === 0 ? (
+                    <p className="text-xs text-slate-500">No available slots on this date. Choose another date.</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {availableSlots.slice(0, 8).map((slot, idx) => (
+                      {availableSlots.map((slot) => (
                         <button
-                          key={idx}
+                          key={slot}
+                          data-testid={`ai-booking-slot-${slot}`}
                           type="button"
                           onClick={() => setSelectedSlot(slot)}
                           className={`p-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
@@ -368,8 +376,9 @@ export const PatientDashboardPage: React.FC = () => {
 
                   <button
                     type="button"
+                    data-testid="ai-booking-confirm"
                     onClick={handleBookRecommendedAppointment}
-                    disabled={bookingLoading || !selectedSlot}
+                    disabled={bookingLoading || slotsLoading || !selectedSlot || !availableSlots.includes(selectedSlot)}
                     className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     {bookingLoading ? (

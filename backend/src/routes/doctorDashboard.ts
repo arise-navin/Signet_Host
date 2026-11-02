@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
-import { hospitalDate, hospitalTimezone, localTimeToUtc } from '@hospital/agents';
+import { hospitalDate, hospitalTimezone, localTimeToUtc, careRelationshipFilter } from '@hospital/agents';
 
 export async function doctorDashboardRoutes(fastify: FastifyInstance) {
   const requireDoctor = (req: any, reply: any) => {
@@ -49,7 +49,7 @@ export async function doctorDashboardRoutes(fastify: FastifyInstance) {
         where: {
           doctorId,
           startTime: { gt: todayEnd },
-          status: { in: ['SCHEDULED', 'CONFIRMED'] },
+          status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULED'] },
         },
         include: { patient: { include: { user: true } } },
         orderBy: { startTime: 'asc' },
@@ -77,6 +77,7 @@ export async function doctorDashboardRoutes(fastify: FastifyInstance) {
       prisma.labReport.findMany({
         where: {
           status: { in: ['IN_PROGRESS', 'REVIEW_REQUESTED'] },
+          patient: careRelationshipFilter(doctorId),
         },
         include: {
           patient: { include: { user: true } },

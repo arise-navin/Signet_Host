@@ -160,8 +160,32 @@ describe('Appointment references and scheduling authorization', () => {
     expect(result.statusCode).toBe(403);
   });
 
-  it('admin and receptionist appointment access is denied by default and restricted to explicit department grants', async () => {
-    for (const user of [admin, receptionist]) {
+  it('admin sees patient appointments across departments without grants', async () => {
+    for (const [profile, appointmentId] of [[patient, appointments[0]], [other, appointments[2]]] as const) {
+      const response = await server.inject({ method: 'GET', url: `/api/patients/${profile.patientId}`, headers: headers(admin) });
+      expect(response.statusCode).toBe(200);
+      const detail = z.object({ clinicalAccessDenied: z.boolean(), appointments: z.array(z.object({ id: z.string() })) }).parse(response.json());
+      expect(detail.clinicalAccessDenied).toBe(false);
+      expect(detail.appointments.map((row) => row.id)).toContain(appointmentId);
+    }
+  });
+
+  it('an active doctor assignment grants patient file access and revocation removes it', async () => {
+    const assignment = await prisma.doctorPatientAssignment.create({ data: { doctorId: doctor.doctorId!, patientId: other.patientId!, assignedBy: admin.id, active: true } });
+    try {
+      const response = await server.inject({ method: 'GET', url: `/api/patients/${other.patientId}`, headers: headers(doctor) });
+      expect(response.statusCode).toBe(200);
+      expect(z.object({ clinicalAccessDenied: z.boolean() }).parse(response.json()).clinicalAccessDenied).toBe(false);
+      await prisma.doctorPatientAssignment.update({ where: { id: assignment.id }, data: { active: false } });
+      const denied = await server.inject({ method: 'GET', url: `/api/patients/${other.patientId}`, headers: headers(doctor) });
+      expect(denied.statusCode).toBe(403);
+    } finally {
+      await prisma.doctorPatientAssignment.delete({ where: { id: assignment.id } });
+    }
+  });
+
+  it('receptionist appointment access requires explicit department grants', async () => {
+    for (const user of [receptionist]) {
       expect(await getAppointmentsTool.execute({}, { authUser: user, agentId: AGENT_IDS.APPOINTMENT }, prisma)).toEqual([]);
       await prisma.schedulingDepartmentAccess.create({ data: { userId: user.id, departmentId } });
       const response = await server.inject({ method: 'GET', url: `/api/appointments?patientId=${patient.patientId}`, headers: headers(user) });
@@ -174,9 +198,9 @@ describe('Appointment references and scheduling authorization', () => {
   });
 
   it('revoked department scope and another user or conversation cannot reuse a displayed mapping', async () => {
-    const snapshot = await savedList(admin, [appointments[0]]);
-    await prisma.schedulingDepartmentAccess.delete({ where: { userId_departmentId: { userId: admin.id, departmentId } } });
-    expect((await resolveAppointmentReference('appointment #1', snapshot.conversationId, admin, await appointmentScope(admin, prisma), prisma)).kind).toBe('UNAVAILABLE');
+    const snapshot = await savedList(receptionist, [appointments[0]]);
+    await prisma.schedulingDepartmentAccess.delete({ where: { userId_departmentId: { userId: receptionist.id, departmentId } } });
+    expect((await resolveAppointmentReference('appointment #1', snapshot.conversationId, receptionist, await appointmentScope(receptionist, prisma), prisma)).kind).toBe('UNAVAILABLE');
     expect((await resolveAppointmentReference('appointment #1', snapshot.conversationId, other, await appointmentScope(other, prisma), prisma)).kind).toBe('UNAVAILABLE');
     const different = await prisma.conversation.create({ data: { userId: patient.id, agentId: AGENT_IDS.APPOINTMENT } });
     expect((await resolveAppointmentReference('appointment #1', different.id, patient, await appointmentScope(patient, prisma), prisma)).kind).toBe('UNAVAILABLE');

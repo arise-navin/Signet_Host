@@ -285,6 +285,10 @@ export const ChatPage: React.FC = () => {
       refetchConversations();
       queryClient.invalidateQueries({ queryKey: ['agentActivity'] });
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patientDetail'] });
+      queryClient.invalidateQueries({ queryKey: ['doctorSlots'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         setErrorMessage(err.message || 'Stream connection error');

@@ -106,12 +106,14 @@ async function main() {
 
   // Run Prisma db push
   console.log('Running Prisma schema synchronization...');
+  const localDbUrl = `postgresql://postgres:postgres@localhost:${PG_PORT}/hospital_ai_db?schema=public`;
   execSync('npx prisma db push --schema=prisma/schema.prisma --skip-generate', {
     stdio: 'inherit',
     cwd: rootDir,
     env: {
       ...process.env,
-      DATABASE_URL: `postgresql://postgres:postgres@localhost:${PG_PORT}/hospital_ai_db?schema=public`,
+      DATABASE_URL: localDbUrl,
+      DIRECT_URL: localDbUrl,
     },
   });
 
@@ -129,7 +131,8 @@ async function main() {
     cwd: rootDir,
     env: {
       ...process.env,
-      DATABASE_URL: `postgresql://postgres:postgres@localhost:${PG_PORT}/hospital_ai_db?schema=public`,
+      DATABASE_URL: localDbUrl,
+      DIRECT_URL: localDbUrl,
     },
   });
 

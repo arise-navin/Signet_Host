@@ -4,6 +4,7 @@ import { AuthUser } from '@hospital/shared';
 import { HospitalDatabase } from './security.js';
 
 export const appointmentScopeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('ADMIN'), userId: z.string().uuid() }),
   z.object({ kind: z.literal('PATIENT'), userId: z.string().uuid(), patientId: z.string().uuid() }),
   z.object({ kind: z.literal('DOCTOR'), userId: z.string().uuid(), doctorId: z.string().uuid() }),
   z.object({ kind: z.literal('DEPARTMENT'), userId: z.string().uuid(), role: z.enum(['ADMIN', 'RECEPTIONIST']), departmentIds: z.array(z.string().uuid()) }),
@@ -15,8 +16,9 @@ export function personalAppointmentScope(user: AuthUser): AppointmentScope {
   return { kind: 'PATIENT', userId: user.id, patientId: user.patientId };
 }
 
-/** Staff scheduling access is explicit; no department grants means no appointment rows. */
+/** Administrators manage all appointments; receptionists require department grants. */
 export async function appointmentScope(user: AuthUser, db: HospitalDatabase): Promise<AppointmentScope> {
+  if (user.role === 'ADMIN') return { kind: 'ADMIN', userId: user.id };
   if (user.role === 'PATIENT') return personalAppointmentScope(user);
   if (user.role === 'DOCTOR') {
     if (!user.doctorId) throw Object.assign(new Error('403 Forbidden: This account has no linked doctor profile.'), { statusCode: 403 });
@@ -27,6 +29,7 @@ export async function appointmentScope(user: AuthUser, db: HospitalDatabase): Pr
 }
 
 export function appointmentScopeWhere(scope: AppointmentScope): Prisma.AppointmentWhereInput {
+  if (scope.kind === 'ADMIN') return {};
   if (scope.kind === 'PATIENT') return { patientId: scope.patientId };
   if (scope.kind === 'DOCTOR') return { doctorId: scope.doctorId };
   return { doctor: { departmentId: { in: scope.departmentIds } } };
@@ -35,6 +38,7 @@ export function appointmentScopeWhere(scope: AppointmentScope): Prisma.Appointme
 export async function authorizeAppointment(user: AuthUser, appointment: { patientId: string; doctorId: string }, db: HospitalDatabase): Promise<void> {
   if (user.patientId === appointment.patientId) return;
   const scope = await appointmentScope(user, db);
+  if (scope.kind === 'ADMIN') return;
   if (scope.kind === 'PATIENT') throw Object.assign(new Error('403 Forbidden: You can only access your own appointments.'), { statusCode: 403 });
   if (scope.kind === 'DOCTOR' && scope.doctorId === appointment.doctorId) return;
   if (scope.kind === 'DEPARTMENT') {

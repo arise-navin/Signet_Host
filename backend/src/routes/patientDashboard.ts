@@ -35,7 +35,7 @@ export async function patientDashboardRoutes(fastify: FastifyInstance) {
         where: {
           patientId,
           startTime: { gte: now },
-          status: { in: ['SCHEDULED', 'CONFIRMED'] },
+          status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULED'] },
         },
         include: { doctor: { include: { user: true, department: true } } },
         orderBy: { startTime: 'asc' },
@@ -46,7 +46,7 @@ export async function patientDashboardRoutes(fastify: FastifyInstance) {
           patientId,
           OR: [
             { startTime: { lt: now } },
-            { status: { in: ['COMPLETED', 'CANCELLED', 'RESCHEDULED'] } },
+            { status: { in: ['COMPLETED', 'CANCELLED'] } },
           ],
         },
         include: {

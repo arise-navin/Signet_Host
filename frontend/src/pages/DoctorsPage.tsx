@@ -41,12 +41,18 @@ export const DoctorsPage: React.FC = () => {
     onSuccess: (res: any) => {
       setBookingSuccess(res.message || 'Appointment successfully booked!');
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patientDetail'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
       queryClient.invalidateQueries({ queryKey: ['doctorSlots'] });
     },
   });
 
-  const departments = ['Cardiology', 'Neurology', 'Pediatrics', 'Orthopedics', 'Oncology'];
+  const { data: allDoctors } = useQuery({
+    queryKey: ['doctors'],
+    queryFn: () => api.getDoctors({}),
+  });
+  const departments: string[] = [...new Set<string>((allDoctors ?? []).map((doctor: { department: string }) => doctor.department))];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -54,7 +60,7 @@ export const DoctorsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Hospital Medical Faculty</h2>
-          <p className="text-xs text-slate-500">Board-certified specialists across 5 core hospital departments</p>
+          <p className="text-xs text-slate-500">Browse hospital specialists and their available appointments</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

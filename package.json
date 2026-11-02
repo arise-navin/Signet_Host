@@ -22,7 +22,8 @@
     "test": "npm run test --workspace=backend",
     "lint": "eslint backend/src packages frontend/src tests/ui playwright.config.ts",
     "test:ui": "playwright test",
-    "db:integrity": "prisma db execute --schema=prisma/schema.prisma --file=prisma/appointment-integrity.sql"
+    "db:integrity": "prisma db execute --schema=prisma/schema.prisma --file=prisma/appointment-integrity.sql",
+    "db:add-doctors": "tsx scripts/add-dummy-doctors.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

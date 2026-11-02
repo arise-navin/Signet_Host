@@ -34,6 +34,8 @@ export const AppointmentsPage: React.FC = () => {
       setActionNotice(res.message || 'Appointment rescheduled.');
       setSelectedApptForReschedule(null);
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patientDetail'] });
     },
     onError: (err: any) => {
       setActionNotice(`Reschedule error: ${err.message}`);
@@ -45,6 +47,8 @@ export const AppointmentsPage: React.FC = () => {
     onSuccess: (res: any) => {
       setActionNotice(res.message || 'Appointment cancelled.');
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patientDetail'] });
     },
     onError: (err: any) => {
       setActionNotice(`Cancellation error: ${err.message}`);

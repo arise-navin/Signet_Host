@@ -7,6 +7,7 @@ export function careRelationshipFilter(doctorId: string): Prisma.PatientWhereInp
   return { OR: [
     { appointments: { some: { doctorId, status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULED', 'COMPLETED'] } } } },
     { visits: { some: { doctorId } } },
+    { doctorAssignments: { some: { doctorId, active: true } } },
   ] };
 }
 
@@ -23,9 +24,9 @@ export async function authorizeCarePatient(user: AuthUser, patientId: string, db
   }
 }
 
-/** Clinical access is denied to receptionists and administrators without an explicit patient grant. */
+/** Administrators and authorized care participants can access clinical records. */
 export async function authorizeClinicalPatient(user: AuthUser, patientId: string, db: HospitalDatabase): Promise<void> {
-  if (user.role === 'RECEPTIONIST' || user.role === 'ADMIN') {
+  if (user.role === 'RECEPTIONIST') {
     throw Object.assign(new Error('403 Forbidden: This role has no clinical record permission. Use an assigned clinician account.'), { statusCode: 403 });
   }
   await authorizeCarePatient(user, patientId, db);

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.tmp
+test-results
+node_modules
+.git
+frontend/dist
+backend/dist
+packages/*/dist
+*.log
+pgdata
