@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "npx prisma generate --schema=../prisma/schema.prisma && npm run build --workspace=@hospital/shared --workspace=@hospital/ai-provider --workspace=@hospital/agents && tsc",
+    "build": "prisma generate --schema=../prisma/schema.prisma && esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --external:@prisma/client --external:bcryptjs --external:fastify --external:@fastify/cors --external:@fastify/jwt",
     "start": "node dist/index.js",
     "seed": "tsx ../prisma/seed.ts",
     "studio": "prisma studio --schema=../prisma/schema.prisma",
@@ -26,6 +26,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.13.4",
+    "esbuild": "^0.25.0",
     "prisma": "^6.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",

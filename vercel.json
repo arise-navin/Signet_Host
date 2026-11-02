@@ -3,7 +3,8 @@
   "services": {
     "backend": {
       "root": "backend",
-      "framework": "fastify"
+      "framework": "fastify",
+      "entrypoint": "dist/index.js"
     },
     "frontend": {
       "root": "frontend",
