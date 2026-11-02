@@ -24,7 +24,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { api } from '../api/client.js';
 
 export const Layout: React.FC = () => {
-  const { currentUser, demoUsers, switchUser, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [healthStatus, setHealthStatus] = useState<{
     backend: string;
@@ -88,7 +88,6 @@ export const Layout: React.FC = () => {
     { name: 'Support Tickets', to: '/support-tickets', icon: Ticket },
     { name: 'Agent Activity', to: '/activity', icon: Activity },
     { name: 'Settings', to: '/settings', icon: Settings },
-    { name: 'Test Lab', to: '/test-lab', icon: FlaskConical, badge: '16 Tests' },
   ];
 
   const getRoleBadgeColor = (r?: string) => {
@@ -186,7 +185,7 @@ export const Layout: React.FC = () => {
             </h1>
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
-              PostgreSQL Active (Port 5433)
+              {healthStatus.backend === 'up' ? 'Backend connected' : 'Backend unavailable'}
             </span>
           </div>
 
@@ -218,39 +217,6 @@ export const Layout: React.FC = () => {
               {/* Dropdown Menu */}
               {userDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Quick Switch Persona</p>
-                    <p className="text-[11px] text-slate-500">Switch user for rapid boundary testing</p>
-                  </div>
-                  <div className="max-h-60 overflow-y-auto py-1">
-                    {demoUsers.map((u) => (
-                      <button
-                        key={u.id}
-                        data-testid={`demo-user-${u.email}`}
-                        onClick={() => {
-                          switchUser(u.id);
-                          setUserDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-xs hover:bg-slate-50 flex items-start justify-between transition-colors cursor-pointer ${
-                          currentUser?.id === u.id ? 'bg-blue-50/70' : ''
-                        }`}
-                      >
-                        <div>
-                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                            {u.name}
-                            {currentUser?.id === u.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />}
-                          </div>
-                          <div className="text-[11px] text-slate-500">{u.email}</div>
-                          {u.mrn && <div className="text-[10px] text-slate-400">MRN: {u.mrn}</div>}
-                          {u.specialization && <div className="text-[10px] text-slate-400">{u.specialization}</div>}
-                        </div>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${getRoleBadgeColor(u.role)}`}>
-                          {u.role}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-
                   <div className="pt-2 border-t border-slate-100 px-3">
                     <button
                       onClick={handleLogout}

@@ -533,7 +533,7 @@ export const getLabReportTool: RegisteredTool = {
       reviewedByDoctor: report.reviewedBy?.user.name || null,
       orderedAt: report.orderedAt.toISOString().split('T')[0],
       completedAt: report.completedAt ? report.completedAt.toISOString().split('T')[0] : null,
-      disclaimer: 'SYNTHETIC DATA NOTICE: Lab values are synthetic demonstrations and not intended for clinical self-diagnosis.',
+      disclaimer: 'Review laboratory results with your clinician.',
     };
   },
 };
@@ -610,39 +610,16 @@ export const searchHospitalFaqTool: RegisteredTool = {
   allowedRoles: ['PATIENT', 'DOCTOR', 'RECEPTIONIST', 'ADMIN'],
   allowedAgents: [AGENT_IDS.CARE],
   execute: async (args, context, prisma) => {
-    const faqs = [
-      {
-        topic: 'Visiting Hours',
-        content: 'General inpatient visiting hours are 08:00 AM to 08:00 PM daily. Intensive Care Unit (ICU) visiting hours are 10:00 AM - 12:00 PM and 05:00 PM - 07:00 PM.',
-      },
-      {
-        topic: 'Emergency Services',
-        content: 'Emergency Department is open 24/7/365 at the North Wing ground floor. Direct emergency ambulance hotline: 555-0911.',
-      },
-      {
-        topic: 'Parking',
-        content: 'Patient and visitor parking is available in Garage A (Main Entrance) and Garage B (Emergency). First 2 hours are complimentary. Valet service is available at Main Entrance 07:00 - 19:00.',
-      },
-      {
-        topic: 'Insurance and Billing',
-        content: 'We accept Medicare, Blue Cross Blue Shield, Aetna, Cigna, and UnitedHealthcare. Financial counselors are available Monday-Friday 08:00-17:00.',
-      },
-      {
-        topic: 'Pharmacy and Cafeteria',
-        content: 'Hospital Outpatient Pharmacy is located in the Central Atrium, open 08:00 - 20:00. The Garden Terrace Cafeteria operates 06:30 - 21:00.',
-      },
-      {
-        topic: 'Medical Records Requests',
-        content: 'Patients can view their records in the Hospital Portal or contact the Health Information Management (HIM) department at ext. 4200.',
-      },
-    ];
+    const configured = process.env.HOSPITAL_FAQS_JSON;
+    if (!configured) throw new Error('Verified hospital information has not been configured. Contact hospital administration.');
+    const faqs = z.array(z.object({ topic: z.string().min(1), content: z.string().min(1) })).parse(JSON.parse(configured));
 
     const q = args.query.toLowerCase();
     const matches = faqs.filter((f) => f.topic.toLowerCase().includes(q) || f.content.toLowerCase().includes(q));
 
     return {
       query: args.query,
-      results: matches.length > 0 ? matches : faqs.slice(0, 3),
+      results: matches,
     };
   },
 };

@@ -123,7 +123,7 @@ async function main() {
   });
 
   // Run Seed script
-  console.log('Seeding synthetic hospital data...');
+  console.log('Initializing application configuration and administrator account...');
   execSync('npx tsx prisma/seed.ts', {
     stdio: 'inherit',
     cwd: rootDir,

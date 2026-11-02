@@ -107,12 +107,6 @@ export const api = {
       method: 'POST',
     }),
 
-  getDemoUsers: () => apiFetch<{ currentUser: AuthUser; demoUsers: AuthUser[] }>('/api/auth/demo-users'),
-  switchUser: (userId: string) =>
-    apiFetch<{ message: string; token: string; user: AuthUser }>('/api/auth/switch', {
-      method: 'POST',
-      body: JSON.stringify({ userId }),
-    }),
   getMe: () => apiFetch<{ user: AuthUser }>('/api/auth/me'),
 
   getSupportTickets: async (page: number) =>

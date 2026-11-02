@@ -40,7 +40,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [doctorForm, setDoctorForm] = useState({
     name: '',
     email: '',
-    password: 'password123',
+    password: '',
     departmentId: '',
     specialization: '',
     licenseNumber: '',
@@ -101,7 +101,7 @@ export const AdminDashboardPage: React.FC = () => {
       setDoctorForm({
         name: '',
         email: '',
-        password: 'password123',
+        password: '',
         departmentId: departments[0]?.id || '',
         specialization: '',
         licenseNumber: '',

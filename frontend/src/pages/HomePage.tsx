@@ -18,17 +18,7 @@ import { useAuth } from '../context/AuthContext.js';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, switchUser, demoUsers } = useAuth();
-
-  const handleQuickDemo = async (role: string) => {
-    const demo = demoUsers.find((u) => u.role === role);
-    if (demo) {
-      await switchUser(demo.id);
-      if (role === 'ADMIN') navigate('/admin/dashboard');
-      else if (role === 'DOCTOR') navigate('/doctor/dashboard');
-      else navigate('/patient/dashboard');
-    }
-  };
+  const { currentUser } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
@@ -119,12 +109,6 @@ export const HomePage: React.FC = () => {
                 <span>Patient Login</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => handleQuickDemo('PATIENT')}
-                className="w-full py-1.5 px-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition-colors cursor-pointer"
-              >
-                Demo: Patient 1
-              </button>
             </div>
           </div>
 
@@ -147,12 +131,6 @@ export const HomePage: React.FC = () => {
                 <span>Doctor Login</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => handleQuickDemo('DOCTOR')}
-                className="w-full py-1.5 px-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition-colors cursor-pointer"
-              >
-                Demo: Dr. Mitchell
-              </button>
             </div>
           </div>
 
@@ -174,12 +152,6 @@ export const HomePage: React.FC = () => {
               >
                 <span>Admin Login</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleQuickDemo('ADMIN')}
-                className="w-full py-1.5 px-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition-colors cursor-pointer"
-              >
-                Demo: System Admin
               </button>
             </div>
           </div>
@@ -210,30 +182,6 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Development Helper Callout */}
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 max-w-3xl mx-auto text-left text-xs">
-          <div className="flex items-center space-x-2 text-amber-400 font-bold mb-2">
-            <Lock className="w-4 h-4" />
-            <span>Development Authentication Notice</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-slate-300">
-            <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
-              <span className="block font-bold text-purple-400">Admin Bootstrap:</span>
-              <span className="font-mono text-[11px]">admin</span> / <span className="font-mono text-[11px]">1812</span>
-              <span className="block text-[10px] text-slate-400 mt-0.5">Requires password reset on first login</span>
-            </div>
-            <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
-              <span className="block font-bold text-emerald-400">Doctor Demo:</span>
-              <span className="font-mono text-[11px] truncate block">dr.mitchell@hospital.com</span>
-              <span className="font-mono text-[11px]">password123</span>
-            </div>
-            <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/40">
-              <span className="block font-bold text-blue-400">Patient Demo:</span>
-              <span className="font-mono text-[11px] truncate block">patient1@example.com</span>
-              <span className="font-mono text-[11px]">password123</span>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Footer */}

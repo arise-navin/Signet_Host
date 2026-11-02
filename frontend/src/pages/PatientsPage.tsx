@@ -40,7 +40,7 @@ export const PatientsPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-800">Hospital Patient Directory</h2>
           <p className="text-xs text-slate-500">
-            Authorized patient profiles, synthetic clinical records, lab reports, and appointment history
+            Authorized patient profiles, clinical records, lab reports, and appointment history
           </p>
         </div>
         <div className="relative w-full sm:w-72">

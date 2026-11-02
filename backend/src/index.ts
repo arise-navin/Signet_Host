@@ -18,6 +18,7 @@ import {
 } from '@hospital/agents';
 
 import { healthRoutes } from './routes/health.js';
+import { maintenanceRoutes } from './routes/maintenance.js';
 import { authRoutes } from './routes/auth.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { patientRoutes } from './routes/patients.js';
@@ -27,7 +28,6 @@ import { chatRoutes } from './routes/chat.js';
 import { supportTicketRoutes } from './routes/supportTickets.js';
 import { agentActivityRoutes } from './routes/agentActivity.js';
 import { settingsRoutes } from './routes/settings.js';
-import { testLabRoutes } from './routes/testLab.js';
 import { adminRoutes } from './routes/admin.js';
 import { doctorDashboardRoutes } from './routes/doctorDashboard.js';
 import { patientDashboardRoutes } from './routes/patientDashboard.js';
@@ -97,6 +97,7 @@ export async function registerAllRoutes(server: FastifyInstance) {
 
   // Register all routes
   await healthRoutes(server, aiProvider);
+  await maintenanceRoutes(server);
   await authRoutes(server);
   await dashboardRoutes(server);
   await patientRoutes(server);
@@ -106,7 +107,6 @@ export async function registerAllRoutes(server: FastifyInstance) {
   await supportTicketRoutes(server);
   await agentActivityRoutes(server);
   await settingsRoutes(server, aiProvider);
-  await testLabRoutes(server, toolExecutor);
   await adminRoutes(server);
   await doctorDashboardRoutes(server);
   await patientDashboardRoutes(server);

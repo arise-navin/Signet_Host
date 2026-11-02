@@ -4,20 +4,16 @@ import {
   api,
   AuthUser,
   setActiveUserId,
-  getActiveUserId,
   setAuthToken,
   getAuthToken,
 } from '../api/client.js';
 
 interface AuthContextType {
   currentUser: AuthUser | null;
-  demoUsers: AuthUser[];
   login: (identifier: string, password: string, expectedRole?: string) => Promise<AuthUser>;
   register: (payload: any) => Promise<AuthUser>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
-  switchUser: (userId: string) => Promise<void>;
-  refreshUsers: () => Promise<void>;
   isLoading: boolean;
   authError: string | null;
   clearError: () => void;
@@ -25,13 +21,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
-  demoUsers: [],
   login: async () => { throw new Error('Not implemented'); },
   register: async () => { throw new Error('Not implemented'); },
   logout: async () => {},
   changePassword: async () => {},
-  switchUser: async () => {},
-  refreshUsers: async () => {},
   isLoading: true,
   authError: null,
   clearError: () => {},
@@ -41,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const queryClient = useQueryClient();
   const [authError, setAuthError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [demoUsers, setDemoUsers] = useState<AuthUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const clearError = () => setAuthError(null);
@@ -54,22 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (meRes?.user) {
         setCurrentUser(meRes.user);
         setActiveUserId(meRes.user.id);
-      } else {
-        // Check if there is an active user ID saved locally
-        const activeId = getActiveUserId();
-        if (activeId) {
-          const session = await api.switchUser(activeId).catch(() => null);
-          if (session?.user) {
-            setCurrentUser(session.user);
-            if (session.token) setAuthToken(session.token);
-          }
-        }
-      }
-
-      // Fetch demo accounts for switcher bar
-      const demoData = await api.getDemoUsers().catch(() => null);
-      if (demoData?.demoUsers) {
-        setDemoUsers(demoData.demoUsers);
       }
     } catch (err) {
       console.warn('Auth initialization:', err);
@@ -135,31 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchUser = async (userId: string) => {
-    try {
-      setAuthError(null);
-      const res = await api.switchUser(userId);
-      queryClient.clear();
-      const url = new URL(window.location.href);
-      url.searchParams.delete('conversation');
-      window.history.replaceState(null, '', url);
-      setActiveUserId(userId);
-      if (res.token) setAuthToken(res.token);
-      setCurrentUser(res.user);
-    } catch (err) {
-      setAuthError(err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  const refreshUsers = async () => {
-    try {
-      const demoData = await api.getDemoUsers();
-      setDemoUsers(demoData.demoUsers);
-    } catch (err) {
-      console.warn('Refresh users failed:', err);
-    }
-  };
-
   useEffect(() => {
     initAuth();
   }, []);
@@ -168,13 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         currentUser,
-        demoUsers,
         login,
         register,
         logout,
         changePassword,
-        switchUser,
-        refreshUsers,
         isLoading,
         authError,
         clearError,

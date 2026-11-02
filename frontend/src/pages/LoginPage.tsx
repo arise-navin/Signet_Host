@@ -40,16 +40,13 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     clearError();
-    // Pre-populate sensible placeholders or demo defaults based on activeTab
+    // Keep the administrator login; other roles require their own account credentials.
     if (activeTab === 'ADMIN') {
       setIdentifier('admin');
-      setPassword('1812');
-    } else if (activeTab === 'DOCTOR') {
-      setIdentifier('dr.mitchell@hospital.com');
-      setPassword('password123');
+      setPassword('');
     } else {
-      setIdentifier('patient1@example.com');
-      setPassword('password123');
+      setIdentifier('');
+      setPassword('');
     }
   }, [activeTab]);
 

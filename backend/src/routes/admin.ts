@@ -169,7 +169,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const schema = z.object({
       name: z.string().min(2, 'Name is required'),
       email: z.string().email('Valid email is required'),
-      password: z.string().min(6, 'Password must be at least 6 characters').default('password123'),
+      password: z.string().min(6, 'Password must be at least 6 characters'),
       departmentId: z.string().uuid('Valid department ID is required'),
       specialization: z.string().min(2, 'Specialization is required'),
       licenseNumber: z.string().min(3, 'License number is required'),

@@ -17,7 +17,6 @@ import { ChatPage } from './pages/ChatPage.js';
 import { SupportTicketsPage } from './pages/SupportTicketsPage.js';
 import { ActivityPage } from './pages/ActivityPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
-import { TestLabPage } from './pages/TestLabPage.js';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,7 +51,6 @@ export const App: React.FC = () => {
               <Route path="/support-tickets" element={<SupportTicketsPage />} />
               <Route path="/activity" element={<ActivityPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/test-lab" element={<TestLabPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
