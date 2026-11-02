@@ -4,7 +4,7 @@
     "backend": {
       "root": "backend",
       "framework": "fastify",
-      "entrypoint": "dist/index.js"
+      "entrypoint": "src/index.ts"
     },
     "frontend": {
       "root": "frontend",
