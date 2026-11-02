@@ -3,6 +3,7 @@ import { z } from 'zod';
 const tokenSchema = z.object({
   token: z.string().min(1),
   expires_in: z.number().positive(),
+  detector_unavailability: z.enum(['hold', 'audit']),
   claims: z.object({ exp: z.number(), tier: z.enum(['T1', 'T2', 'T3', 'T4']) }),
 });
 

@@ -130,6 +130,10 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
+        {settings?.warning && (
+          <p role="status" data-testid="ai-coverage-warning" className="text-xs text-amber-700">{settings.warning}</p>
+        )}
+
         {/* Configuration Controls */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
           <div>

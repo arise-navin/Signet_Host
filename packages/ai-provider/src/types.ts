@@ -34,6 +34,7 @@ export interface GenerateResponse {
 }
 
 export interface HealthCheckResult {
+  warning?: string;
   ok: boolean;
   serverRunning: boolean;
   models: string[];

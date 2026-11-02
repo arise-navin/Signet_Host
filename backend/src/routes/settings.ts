@@ -16,6 +16,7 @@ export async function settingsRoutes(fastify: FastifyInstance, aiProvider: AIPro
       modelAvailable: health.modelAvailable,
       installedModels: health.models,
       error: health.error,
+      warning: health.warning,
     };
   };
 

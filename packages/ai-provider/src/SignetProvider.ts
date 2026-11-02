@@ -72,18 +72,22 @@ export class SignetProvider extends GroqProvider {
   public override async healthCheck(): Promise<HealthCheckResult> {
     const gateway = await this.gatewayHealth();
     const models = gateway.cloud_llm;
-    const { claims } = await acquireSignetToken(this.baseUrl, this.deploymentCredential, null);
+    const identity = await acquireSignetToken(this.baseUrl, this.deploymentCredential, null);
+    const { claims } = identity;
     const modelAvailable = models.includes(this.getModel());
     const detectorsUnavailable = (claims.tier === 'T1' || claims.tier === 'T2')
       && Object.values(gateway.detectors.modes).some((mode) => mode === 'off');
     return {
-      ok: modelAvailable && !detectorsUnavailable,
+      ok: modelAvailable && (!detectorsUnavailable || identity.detector_unavailability === 'audit'),
       serverRunning: true,
       models,
       selectedModel: this.getModel(),
       requestedModel: this.getRequestedModel(),
       modelAvailable,
-      error: detectorsUnavailable
+      warning: detectorsUnavailable && identity.detector_unavailability === 'audit'
+        ? 'Some AI misuse detectors are unavailable. The approved policy allows normal requests with rule-based checks and audit logging; unstructured misuse may go undetected.'
+        : undefined,
+      error: detectorsUnavailable && identity.detector_unavailability === 'hold'
         ? 'Signet is connected, but required high-risk detectors are disabled. Medical AI requests remain blocked until detectors and required approval support are deployed.'
         : modelAvailable ? undefined : `Signet does not advertise configured model '${this.getModel()}'.`,
     };
