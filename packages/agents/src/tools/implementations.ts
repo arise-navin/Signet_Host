@@ -15,7 +15,7 @@ export const getAppointmentsTool: RegisteredTool<{ patientId?: string; scope?: '
   description: 'List real appointments and their IDs. Patients see only their appointments; doctors see only their own schedule.',
   schema: z.object({
     patientId: z.string().uuid().optional().describe('Optional patient UUID to filter appointments'),
-    scope: z.literal('personal').optional().describe('Only for explicit personal patient appointments; omit for doctor professional schedule'),
+    scope: z.enum(['personal']).optional().describe('Omit normally. The only allowed value is "personal", for explicitly requested personal patient appointments; never pass a user role as the scope.'),
     fromTime: z.string().datetime({ offset: true }).optional().describe('Earliest appointment time for upcoming requests'),
   }),
   allowedRoles: ['PATIENT', 'DOCTOR', 'RECEPTIONIST', 'ADMIN'],
@@ -101,9 +101,9 @@ export const getAppointmentByIdTool: RegisteredTool<{ appointmentId: string }> =
 
 export const getDoctorsTool: RegisteredTool = {
   name: 'get_doctors',
-  description: 'Search for hospital doctors by department name or medical specialization.',
+  description: 'List hospital doctors, optionally filtered by name, department or specialization. Omit unused filters; do not send empty strings.',
   schema: z.object({
-    name: z.string().min(2).optional().describe('Doctor name to search'),
+    name: z.string().min(2).optional().describe('Doctor name to search, at least 2 characters. Omit when no doctor name was supplied.'),
     department: z.string().optional().describe('Department name such as Cardiology, Neurology, Pediatrics, Orthopedics, Oncology'),
     specialization: z.string().optional().describe('Medical specialization or keyword'),
   }),
