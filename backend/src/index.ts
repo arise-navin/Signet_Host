@@ -18,7 +18,6 @@ import {
 } from '@hospital/agents';
 
 import { healthRoutes } from './routes/health.js';
-import { maintenanceRoutes } from './routes/maintenance.js';
 import { authRoutes } from './routes/auth.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { patientRoutes } from './routes/patients.js';
@@ -97,7 +96,6 @@ export async function registerAllRoutes(server: FastifyInstance) {
 
   // Register all routes
   await healthRoutes(server, aiProvider);
-  await maintenanceRoutes(server);
   await authRoutes(server);
   await dashboardRoutes(server);
   await patientRoutes(server);

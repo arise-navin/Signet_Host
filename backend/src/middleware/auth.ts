@@ -10,8 +10,6 @@ declare module 'fastify' {
 const sessionSchema = z.object({ sub: z.string().uuid() });
 const publicRoutes = new Set([
   '/api/health',
-  '/api/maintenance/export',
-  '/api/maintenance/reset',
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/logout',
