@@ -1,0 +1,573 @@
+// ==========================================
+// Prisma Schema for Hospital AI Application
+// ==========================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+enum RoleType {
+  PATIENT
+  DOCTOR
+  RECEPTIONIST
+  ADMIN
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum LabTestStatus {
+  ORDERED
+  IN_PROGRESS
+  COMPLETED
+  REVIEW_REQUESTED
+  REVIEWED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// 1. Role
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleType @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+
+  @@map("roles")
+}
+
+// 2. User
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  roleId        String
+  role          Role           @relation(fields: [roleId], references: [id])
+  isActive      Boolean        @default(true)
+  mustChangePassword Boolean   @default(false)
+  phone         String?        // Optional phone for registration
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  patient       Patient?
+  doctor        Doctor?
+  conversations Conversation[]
+  supportTickets SupportTicket[]
+  auditLogs     AuditLog[]
+  schedulingAccess SchedulingDepartmentAccess[]
+  displayedAppointmentLists DisplayedAppointmentList[]
+  notifications Notification[]
+  symptomRequests PatientSymptomRequest[]
+
+  @@index([roleId])
+  @@map("users")
+}
+
+// 3. Department
+model Department {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  code        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  doctors     Doctor[]
+  schedulingAccess SchedulingDepartmentAccess[]
+
+  @@map("departments")
+}
+
+model SchedulingDepartmentAccess {
+  userId       String
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@id([userId, departmentId])
+  @@map("scheduling_department_access")
+}
+
+// 4. Patient
+model Patient {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mrn            String          @unique // Medical Record Number
+  dateOfBirth    DateTime
+  gender         String
+  bloodGroup     String?
+  phone          String
+  emergencyContact String?
+  address        String?
+  allergies      String?
+  chronicConditions String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  appointments      Appointment[]
+  medicalRecords    MedicalRecord[]
+  prescriptions     Prescription[]
+  visits            PatientVisit[]
+  labReports        LabReport[]
+  supportTickets    SupportTicket[]
+  doctorAssignments DoctorPatientAssignment[]
+  symptomRequests   PatientSymptomRequest[]
+
+  @@index([userId])
+  @@index([mrn])
+  @@map("patients")
+}
+
+// 5. Doctor
+model Doctor {
+  id             String               @id @default(uuid())
+  userId         String               @unique
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId   String
+  department     Department           @relation(fields: [departmentId], references: [id])
+  specialization String
+  licenseNumber  String               @unique
+  consultationFee Decimal             @default(50.00) @db.Decimal(10, 2)
+  isActive       Boolean              @default(true)
+  bio            String?
+  photoUrl       String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  availabilities DoctorAvailability[]
+  unavailablePeriods DoctorUnavailablePeriod[]
+  appointments   Appointment[]
+  visits         PatientVisit[]
+  prescriptions  Prescription[]
+  medicalRecords MedicalRecord[]
+  labReportsReviewed LabReport[]      @relation("DoctorReviewed")
+  patientAssignments DoctorPatientAssignment[]
+  aiRecommendations  AIRecommendation[]
+
+  @@index([userId])
+  @@index([departmentId])
+  @@map("doctors")
+}
+
+// 6. DoctorAvailability
+model DoctorAvailability {
+  id        String   @id @default(uuid())
+  doctorId  String
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek Int      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime String   // e.g. "09:00"
+  endTime   String   // e.g. "17:00"
+  slotMinutes Int    @default(30)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@map("doctor_availabilities")
+}
+
+// Leave and other explicitly blocked periods, stored as UTC instants.
+model DoctorUnavailablePeriod {
+  id        String   @id @default(uuid())
+  doctorId  String
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@index([doctorId, startTime])
+  @@map("doctor_unavailable_periods")
+}
+
+// 7. Appointment
+model Appointment {
+  id          String            @id @default(uuid())
+  patientId   String
+  patient     Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId    String
+  doctor      Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  startTime   DateTime
+  endTime     DateTime
+  status      AppointmentStatus @default(SCHEDULED)
+  reason      String
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  visit       PatientVisit?
+  supportTickets SupportTicket[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([startTime])
+  @@index([status])
+  @@map("appointments")
+}
+
+// 8. PatientVisit
+model PatientVisit {
+  id            String      @id @default(uuid())
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId      String
+  doctor        Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointmentId String?     @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  visitDate     DateTime    @default(now())
+  summary       String
+  vitals        String?     // e.g. BP, HR, Temp JSON
+  diagnosis     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  medicalRecord MedicalRecord?
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("patient_visits")
+}
+
+// 9. MedicalRecord
+model MedicalRecord {
+  id          String       @id @default(uuid())
+  patientId   String
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId    String?
+  doctor      Doctor?      @relation(fields: [doctorId], references: [id])
+  visitId     String?      @unique
+  visit       PatientVisit? @relation(fields: [visitId], references: [id])
+  recordType  String       // e.g., "Clinical Note", "Discharge Summary", "Allergy Evaluation"
+  title       String
+  content     String
+  attachments String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("medical_records")
+}
+
+// 10. Prescription
+model Prescription {
+  id          String   @id @default(uuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId    String
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  medication  String
+  dosage      String
+  frequency   String
+  startDate   DateTime
+  endDate     DateTime?
+  instructions String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@map("prescriptions")
+}
+
+// 11. LabTest
+model LabTest {
+  id          String      @id @default(uuid())
+  code        String      @unique // e.g. "CBC-01", "LIPID-02"
+  name        String      // e.g. "Complete Blood Count", "Lipid Panel"
+  category    String      // e.g. "Hematology", "Biochemistry"
+  standardUnit String?
+  normalRange String?
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  reports     LabReport[]
+
+  @@map("lab_tests")
+}
+
+// 12. LabReport
+model LabReport {
+  id              String        @id @default(uuid())
+  patientId       String
+  patient         Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  labTestId       String
+  labTest         LabTest       @relation(fields: [labTestId], references: [id])
+  reviewedById    String?
+  reviewedBy      Doctor?       @relation("DoctorReviewed", fields: [reviewedById], references: [id])
+  status          LabTestStatus @default(COMPLETED)
+  resultValues    String        // JSON string of metrics & findings
+  clinicalSummary String?
+  orderedAt       DateTime      @default(now())
+  completedAt     DateTime?
+  doctorNotes     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([patientId])
+  @@index([labTestId])
+  @@index([status])
+  @@map("lab_reports")
+}
+
+// 13. SupportTicket
+model SupportTicket {
+  id          String         @id @default(uuid())
+  ticketNumber String        @unique
+  patientId   String?
+  patient     Patient?       @relation(fields: [patientId], references: [id])
+  createdById String
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  appointmentId String?
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  category    String         // Billing, Navigation, Technical, General Inquiry
+  subject     String
+  description String
+  status      TicketStatus   @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  assignedTo  String?
+  resolution  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([patientId])
+  @@index([createdById])
+  @@index([appointmentId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+// 14. AIAgent
+model AIAgent {
+  id             String           @id // matches AGENT_IDS (e.g. appointment-agent)
+  name           String
+  description    String
+  roleDescription String
+  allowedTools   String           // JSON array string of tool names
+  active         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  conversations  Conversation[]
+  executions     AgentExecution[]
+
+  @@map("ai_agents")
+}
+
+// 15. Conversation
+model Conversation {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId     String
+  agent       AIAgent          @relation(fields: [agentId], references: [id])
+  title       String?
+  ticketIntent Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  messages    Message[]
+  executions  AgentExecution[]
+  displayedAppointmentLists DisplayedAppointmentList[]
+
+  @@index([userId])
+  @@index([agentId])
+  @@map("conversations")
+}
+
+model DisplayedAppointmentList {
+  id             String @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items          Json
+  authorizationScope Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+  publishedAt    DateTime?
+
+  @@index([conversationId, userId, createdAt])
+  @@map("displayed_appointment_lists")
+}
+
+// 16. Message
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderRole     String       // "user" | "assistant" | "system"
+  agentId        String?
+  content        String
+  toolCalls      String?      // JSON string of tool calls
+  activities     Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+// 17. AgentExecution
+model AgentExecution {
+  id             String          @id @default(uuid())
+  conversationId String?
+  conversation   Conversation?   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  agentId        String
+  agent          AIAgent         @relation(fields: [agentId], references: [id])
+  userId         String
+  userPrompt     String
+  finalResponse  String?
+  status         String          // SUCCESS, FAILED, TIMED_OUT, DELEGATED
+  delegatedTo    String?
+  durationMs     Int
+  error          String?
+  createdAt      DateTime        @default(now())
+
+  toolExecutions ToolExecution[]
+
+  @@index([conversationId])
+  @@index([agentId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("agent_executions")
+}
+
+// 18. ToolExecution
+model ToolExecution {
+  id          String         @id @default(uuid())
+  executionId String
+  execution   AgentExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  toolName    String
+  agentId     String?        // Acting agent; nullable for pre-existing execution logs
+  arguments   String         // JSON string
+  result      String?        // JSON string
+  success     Boolean
+  error       String?
+  durationMs  Int
+  createdAt   DateTime       @default(now())
+
+  @@index([executionId])
+  @@index([toolName])
+  @@map("tool_executions")
+}
+
+// 19. AuditLog
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // e.g. "VIEW_MEDICAL_RECORD", "BOOK_APPOINTMENT", "AGENT_HANDOFF"
+  resource   String   // e.g. "MedicalRecord", "Appointment"
+  resourceId String?
+  details    String?  // JSON string
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// 20. Notification
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // APPOINTMENT_BOOKED, APPOINTMENT_CANCELLED, RECOMMENDATION, TICKET_UPDATE, etc.
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  metadata  Json?    // Additional data (appointmentId, ticketId, etc.)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// 21. DoctorPatientAssignment (explicit admin-managed assignments)
+model DoctorPatientAssignment {
+  id        String   @id @default(uuid())
+  doctorId  String
+  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  assignedBy String   // Admin userId who made the assignment
+  notes     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, patientId])
+  @@index([doctorId])
+  @@index([patientId])
+  @@map("doctor_patient_assignments")
+}
+
+// 22. PatientSymptomRequest — patient health issue submission
+model PatientSymptomRequest {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId         String?
+  patient           Patient? @relation(fields: [patientId], references: [id])
+  description       String   // Patient's natural language description
+  urgencyFlag       Boolean  @default(false) // Emergency symptom flag
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  recommendation    AIRecommendation?
+
+  @@index([userId])
+  @@index([patientId])
+  @@map("patient_symptom_requests")
+}
+
+// 23. AIRecommendation — AI specialty and doctor suggestion
+model AIRecommendation {
+  id                  String   @id @default(uuid())
+  symptomRequestId    String   @unique
+  symptomRequest      PatientSymptomRequest @relation(fields: [symptomRequestId], references: [id], onDelete: Cascade)
+  recommendedSpecialty String  // AI-suggested specialty (e.g. "Cardiology")
+  recommendedDoctorIds Json    // Array of doctor IDs
+  aiRationale         String?  // AI's explanation
+  selectedDoctorId    String?
+  selectedDoctor      Doctor?  @relation(fields: [selectedDoctorId], references: [id])
+  appointmentId       String?  // Booked appointment (if completed)
+  status              String   @default("PENDING") // PENDING, DOCTOR_SELECTED, BOOKED, DISMISSED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([symptomRequestId])
+  @@index([selectedDoctorId])
+  @@map("ai_recommendations")
+}

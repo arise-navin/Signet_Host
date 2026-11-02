@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.chat-markdown { overflow-wrap: anywhere; }
+.chat-markdown p + p, .chat-markdown ul, .chat-markdown ol, .chat-markdown pre, .chat-markdown table { margin-top: 0.65rem; }
+.chat-markdown ul { list-style: disc; padding-left: 1.25rem; }
+.chat-markdown ol { list-style: decimal; padding-left: 1.25rem; }
+.chat-markdown strong { font-weight: 700; }
+.chat-markdown code { background: #e2e8f0; border-radius: 0.25rem; padding: 0.1rem 0.25rem; }
+.chat-markdown pre { overflow-x: auto; background: #f1f5f9; padding: 0.65rem; border-radius: 0.5rem; }
+.chat-markdown table { display: block; overflow-x: auto; border-collapse: collapse; max-width: 100%; }
+.chat-markdown th, .chat-markdown td { border: 1px solid #cbd5e1; padding: 0.4rem 0.55rem; text-align: left; }
+.chat-markdown th { font-weight: 600; background: #f1f5f9; }
+.chat-markdown a { color: #2563eb; text-decoration: underline; }
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

@@ -1,0 +1,20 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Environment variables
+.env
+.env*.local
+
+# Database & local data
+pgdata/
+*.log
+test-results/
+.tmp/
+
+# Build outputs
+frontend/dist
+backend/dist
+packages/*/dist
+.vercel

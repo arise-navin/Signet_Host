@@ -1,0 +1,40 @@
+{
+  "name": "hospital-ai-lab",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Hospital AI Multi-Agent Application powered by Groq & Ollama",
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "db": "node scripts/db.js",
+    "db:seed": "npm run seed --workspace=backend",
+    "db:studio": "npm run studio --workspace=backend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev": "node scripts/dev.js",
+    "build": "npm run build --workspaces",
+    "vercel-build": "prisma generate --schema=prisma/schema.prisma && npm run build",
+    "test": "npm run test --workspace=backend",
+    "lint": "eslint backend/src packages frontend/src tests/ui playwright.config.ts",
+    "test:ui": "playwright test",
+    "db:integrity": "prisma db execute --schema=prisma/schema.prisma --file=prisma/appointment-integrity.sql"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "concurrently": "^9.1.2",
+    "eslint": "^10.13.0",
+    "prisma": "^6.4.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.72.0"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3"
+  }
+}
