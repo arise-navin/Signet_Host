@@ -8,14 +8,23 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config(); // Also check cwd
 
-const defaultDbUrl = 'postgresql://postgres:postgres@localhost:5433/hospital_ai_db?schema=public';
-const activeDbUrl = process.env.DATABASE_URL || defaultDbUrl;
+const activeDbUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_POOLED;
 
-export const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: activeDbUrl,
-    },
-  },
-  log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-});
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: activeDbUrl
+      ? {
+          db: {
+            url: activeDbUrl,
+          },
+        }
+      : undefined,
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
