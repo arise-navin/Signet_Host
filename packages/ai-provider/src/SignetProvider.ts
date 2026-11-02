@@ -54,11 +54,20 @@ export class SignetProvider extends GroqProvider {
 
   private async gatewayHealth(): Promise<z.infer<typeof gatewayHealthSchema>> {
     const url = `${new URL(this.baseUrl).origin}/healthz`;
-    const response = await fetch(url, { signal: AbortSignal.timeout(6000) });
-    if (!response.ok) {
-      throw new Error(`Signet discovery GET ${url} returned HTTP ${response.status}: ${await response.text()}`);
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        const response = await fetch(url, { signal: AbortSignal.timeout(6000) });
+        if (!response.ok) {
+          throw new Error(`Signet discovery GET ${url} returned HTTP ${response.status}: ${await response.text()}`);
+        }
+        return gatewayHealthSchema.parse(await response.json());
+      } catch (error) {
+        if (attempt === 3) throw error;
+        console.warn('Signet gateway discovery failed; retrying', {
+          url, attempt, error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
-    return gatewayHealthSchema.parse(await response.json());
   }
 
   public override async healthCheck(): Promise<HealthCheckResult> {
