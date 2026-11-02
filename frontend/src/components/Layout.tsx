@@ -159,7 +159,7 @@ export const Layout: React.FC = () => {
           <div className="flex items-center justify-between font-medium text-slate-700 mb-1">
             <span className="flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${healthStatus.ollama === 'ready' ? 'bg-emerald-500' : healthStatus.ollama === 'model_missing' ? 'bg-amber-500' : 'bg-rose-500'}`} />
-              Ollama Engine
+              AI Engine
             </span>
             <span className="text-[10px] uppercase font-bold text-slate-500">
               {healthStatus.ollama}

@@ -81,7 +81,7 @@ export const SettingsPage: React.FC = () => {
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-slate-800">System & AI Provider Settings</h2>
-        <p className="text-xs text-slate-500">Configure local Ollama instance, verify installed models, and test inference</p>
+        <p className="text-xs text-slate-500">Check the AI connection, available models, and inference readiness</p>
       </div>
 
       {/* Ollama Connection & Status Card */}
@@ -92,7 +92,7 @@ export const SettingsPage: React.FC = () => {
               <Cpu className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-sm">Ollama Engine Status</h3>
+              <h3 className="font-bold text-slate-800 text-sm">AI Engine Status</h3>
               <p className="text-xs text-slate-500">Base URL: <code className="font-mono">{settings?.baseUrl}</code></p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export const SettingsPage: React.FC = () => {
             <button
               onClick={() => refetch()}
               className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Refresh Ollama status"
+              title="Refresh AI status"
             >
               <RotateCw className="w-4 h-4" />
             </button>
@@ -121,11 +121,11 @@ export const SettingsPage: React.FC = () => {
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-bold">Requested Model Notice</p>
+              <p className="font-bold">AI Readiness Notice</p>
               <p className="text-amber-700 leading-relaxed">{settings.error}</p>
-              <p className="text-[11px] text-amber-600">
-                You can select an installed model from the dropdown below to operate the agents without manual download.
-              </p>
+              {!isModelAvailable && settings.provider !== 'signet' && (
+                <p className="text-[11px] text-amber-600">Select an available model below, then test inference.</p>
+              )}
             </div>
           </div>
         )}
@@ -147,7 +147,7 @@ export const SettingsPage: React.FC = () => {
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1.5">
-              Active Installed Model
+              Active Model
             </label>
             <div className="flex gap-2">
               <select
@@ -176,7 +176,7 @@ export const SettingsPage: React.FC = () => {
 
         {/* Installed Models Tags */}
         <div className="pt-2">
-          <p className="text-xs font-semibold text-slate-700 mb-2">Verified Installed Models on Local Host</p>
+          <p className="text-xs font-semibold text-slate-700 mb-2">Models Advertised by the AI Provider</p>
           <div className="flex flex-wrap gap-2">
             {settings?.installedModels?.length === 0 ? (
               <span className="text-xs text-slate-400">No models detected via 'ollama list'.</span>
@@ -232,7 +232,7 @@ export const SettingsPage: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-slate-800 text-sm">Test Local Model Inference</h3>
+            <h3 className="font-bold text-slate-800 text-sm">Test Model Inference</h3>
             <p className="text-xs text-slate-500">
               Execute a real inference test against <code className="font-mono font-semibold text-blue-600">{settings?.selectedModel}</code>
             </p>
@@ -240,7 +240,7 @@ export const SettingsPage: React.FC = () => {
 
           <button
             onClick={() => testInferenceMutation.mutate()}
-            disabled={testInferenceMutation.isPending || !isServerRunning}
+            disabled={testInferenceMutation.isPending || !settings?.ready}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors disabled:opacity-40 shadow-xs"
           >
             <Play className={`w-3.5 h-3.5 ${testInferenceMutation.isPending ? 'animate-spin' : ''}`} />

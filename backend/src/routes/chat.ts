@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 import { AgentRunner, AgentRouter } from '@hospital/agents';
 import { AGENT_IDS, AgentId, SSEEvent, sanitizeToolError } from '@hospital/shared';
+import { AIProvider } from '@hospital/ai-provider';
 
-export async function chatRoutes(fastify: FastifyInstance, runner: AgentRunner, router: AgentRouter) {
+export async function chatRoutes(fastify: FastifyInstance, runner: AgentRunner, router: AgentRouter, aiProvider: AIProvider) {
   fastify.delete('/api/chat/conversations', async (req, reply) => {
     const authUser = req.authUser;
     if (!authUser) return reply.status(401).send({ error: 'Authentication required.' });
@@ -91,6 +92,10 @@ export async function chatRoutes(fastify: FastifyInstance, runner: AgentRunner, 
       const conversation = await prisma.conversation.findUnique({ where: { id: conversationId }, select: { userId: true } });
       if (!conversation) return reply.status(404).send({ error: 'Conversation not found.' });
       if (conversation.userId !== authUser.id) return reply.status(403).send({ error: 'You can only continue your own conversations.' });
+    }
+    const readiness = await aiProvider.healthCheck();
+    if (!readiness.ok) {
+      return reply.status(503).send({ error: readiness.error || 'AI provider is not ready. No agent tools were started.' });
     }
     const initialDecision = router.selectAgent(prompt, reqAgentId);
     const decision = !reqAgentId && initialDecision.confidence < 0.9 ? await runner.classifyIntent(prompt) : initialDecision;

@@ -47,7 +47,7 @@ export function createAIProvider(): AIProvider {
   if (providerType === 'signet') {
     return new SignetProvider({
       baseUrl: process.env.SIGNET_GATEWAY_URL || '',
-      token: process.env.SIGNET_WORKLOAD_TOKEN || '',
+      deploymentCredential: process.env.SIGNET_DEPLOYMENT_CREDENTIAL || '',
       model: process.env.SIGNET_MODEL || 'gpt-oss:120b-cloud',
     });
   }
@@ -102,7 +102,7 @@ export async function registerAllRoutes(server: FastifyInstance) {
   await patientRoutes(server);
   await doctorRoutes(server);
   await appointmentRoutes(server);
-  await chatRoutes(server, agentRunner, agentRouter);
+  await chatRoutes(server, agentRunner, agentRouter, aiProvider);
   await supportTicketRoutes(server);
   await agentActivityRoutes(server);
   await settingsRoutes(server, aiProvider);

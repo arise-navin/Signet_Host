@@ -116,6 +116,10 @@ export const ChatPage: React.FC = () => {
   const handleSendMessage = async (promptToSend?: string) => {
     const text = (promptToSend || inputMessage).trim();
     if (!text || isStreaming) return;
+    if (health?.services.ollama.status !== 'ready') {
+      setErrorMessage(health?.services.ollama.error || 'AI is not ready. Wait for the readiness check before sending a message.');
+      return;
+    }
 
     setInputMessage('');
     setErrorMessage(null);
@@ -400,7 +404,7 @@ export const ChatPage: React.FC = () => {
           </div>
 
           <span className="text-[11px] text-slate-400 hidden sm:inline">
-            {health?.services.ollama.status === 'ready' ? 'Ollama connected' : 'Ollama unavailable'} | {health?.hospitalTimezone}
+            AI {health?.services.ollama.status || 'checking'} | {health?.hospitalTimezone}
           </span>
         </div>
 
@@ -488,6 +492,11 @@ export const ChatPage: React.FC = () => {
 
         {/* Input Bar */}
         <div className="p-4 border-t border-slate-200 bg-white">
+          {health?.services.ollama.error && (
+            <p role="alert" data-testid="chat-ai-readiness" className="mb-3 text-xs text-amber-700">
+              {health.services.ollama.error}
+            </p>
+          )}
           {/* Quick chips when chat has messages */}
           {messages.length > 0 && (
             <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-none">
@@ -534,7 +543,7 @@ export const ChatPage: React.FC = () => {
               <button
                 data-testid="chat-send"
                 type="submit"
-                disabled={!inputMessage.trim()}
+                disabled={!inputMessage.trim() || health?.services.ollama.status !== 'ready'}
                 className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-40 shadow-xs"
               >
                 <Send className="w-4 h-4" />

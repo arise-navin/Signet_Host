@@ -10,6 +10,7 @@ export async function settingsRoutes(fastify: FastifyInstance, aiProvider: AIPro
       provider: aiProvider instanceof SignetProvider ? 'signet' : aiProvider instanceof GroqProvider ? 'groq' : 'ollama',
       baseUrl: (aiProvider as any).baseUrl || (aiProvider instanceof GroqProvider ? 'https://api.groq.com/openai/v1' : 'http://localhost:11434'),
       serverRunning: health.serverRunning,
+      ready: health.ok,
       selectedModel: health.selectedModel,
       requestedModel: health.requestedModel,
       modelAvailable: health.modelAvailable,
