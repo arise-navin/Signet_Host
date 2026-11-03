@@ -488,6 +488,26 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // 9. Departments listing
+  fastify.post('/api/admin/departments', async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+
+    const data = z.object({
+      name: z.string().trim().min(2),
+      code: z.string().trim().min(2),
+      description: z.string().trim().min(1),
+    }).parse(req.body);
+
+    const existing = await prisma.department.findFirst({
+      where: { OR: [{ name: data.name }, { code: data.code }] },
+    });
+    if (existing) {
+      return reply.status(409).send({ error: 'A department with this name or code already exists.' });
+    }
+
+    const department = await prisma.department.create({ data });
+    return reply.status(201).send(department);
+  });
+
   fastify.get('/api/admin/departments', async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
     const depts = await prisma.department.findMany({
