@@ -183,9 +183,9 @@ export const Layout: React.FC = () => {
             <h1 className="text-lg font-semibold text-slate-800">
               {navItems.find((i) => i.to === location.pathname)?.name || 'Hospital AI Dashboard'}
             </h1>
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
-              {healthStatus.backend === 'up' ? 'Backend connected' : 'Backend unavailable'}
+            <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${healthStatus.backend === 'up' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : healthStatus.backend === 'checking' ? 'bg-slate-50 text-slate-700 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${healthStatus.backend === 'up' ? 'bg-emerald-500' : healthStatus.backend === 'checking' ? 'bg-slate-500' : 'bg-rose-500'}`}></span>
+              {healthStatus.backend === 'up' ? 'Backend connected' : healthStatus.backend === 'checking' ? 'Checking backend' : 'Backend unavailable'}
             </span>
           </div>
 

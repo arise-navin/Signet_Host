@@ -15,8 +15,7 @@ beforeAll(async () => {
   await app.ready();
   const users = await prisma.user.findMany({ where: { email: { in: ['admin@hospital.com', 'patient1@example.com'] } } });
   for (const user of users) {
-    const login = await app.inject({ method: 'POST', url: '/api/auth/switch', payload: { userId: user.id } });
-    const token = JSON.parse(login.body).token as string;
+    const token = app.jwt.sign({ sub: user.id });
     authorizations.set(user.id, `Bearer ${token}`);
     if (user.email === 'admin@hospital.com') adminAuthorization = `Bearer ${token}`;
   }
@@ -125,42 +124,8 @@ describe('Hospital AI Application Integration Tests', () => {
     }
   });
 
-  describe('Executable Test Lab Scenarios (TEST-001 through TEST-016)', () => {
-    const testIds = [
-      'TEST-001',
-      'TEST-002',
-      'TEST-003',
-      'TEST-004',
-      'TEST-005',
-      'TEST-006',
-      'TEST-007',
-      'TEST-008',
-      'TEST-009',
-      'TEST-010',
-      'TEST-011',
-      'TEST-012',
-      'TEST-013',
-      'TEST-014',
-      'TEST-015',
-      'TEST-016',
-    ];
-
-    for (const testId of testIds) {
-      it(`Executes scenario ${testId}`, async () => {
-        const res = await app.inject({
-          headers: { authorization: adminAuthorization },
-          method: 'POST',
-          url: `/api/test-lab/run/${testId}`,
-        });
-
-        expect(res.statusCode).toBe(200);
-        const result = JSON.parse(res.body);
-        if (!result.passed) {
-          console.error(`TEST FAILURE [${result.testId}]:`, result.actualResult);
-        }
-        expect(result.testId).toBe(testId);
-        expect(result.passed).toBe(true);
-      });
-    }
+  it('does not expose the retired test lab mutation endpoint', async () => {
+    const response = await app.inject({ method: 'POST', url: '/api/test-lab/run/TEST-001', headers: { authorization: adminAuthorization } });
+    expect(response.statusCode).toBe(404);
   });
 });

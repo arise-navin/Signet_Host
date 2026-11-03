@@ -172,7 +172,7 @@ export class GroqProvider implements AIProvider {
 
     if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
       toolCalls = choice.message.tool_calls.map((tc) => {
-        let parsedArgs: any = {};
+        let parsedArgs: ToolCall['arguments'];
         try {
           parsedArgs =
             typeof tc.function.arguments === 'string'
@@ -254,7 +254,7 @@ export class GroqProvider implements AIProvider {
     const toolCalls: ToolCall[] = [];
     for (const [_, tc] of toolCallsMap.entries()) {
       if (tc.name) {
-        let args: any = {};
+        let args: ToolCall['arguments'];
         try {
           args = JSON.parse(tc.arguments || '{}');
         } catch {

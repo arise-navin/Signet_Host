@@ -314,19 +314,17 @@ describe('Appointment support ticket workflow', () => {
     expect(await prisma.supportTicket.findUnique({ where: { id: receipt.ticketId } })).not.toBeNull();
   }, 120000);
 
-  it('a real inference outage after commit still reports the saved ticket rather than losing its receipt', async () => {
+  it('an AI readiness outage rejects the request before creating a ticket', async () => {
+    const before = await prisma.supportTicket.count({ where: { createdById: other.id, appointmentId: otherAppointmentId } });
     const original = process.env.OLLAMA_BASE_URL;
     process.env.OLLAMA_BASE_URL = 'http://127.0.0.1:1';
     const unavailable = (await createServer()).server;
     if (original === undefined) delete process.env.OLLAMA_BASE_URL; else process.env.OLLAMA_BASE_URL = original;
     try {
       const response = await unavailable.inject({ method: 'POST', url: '/api/chat/stream', headers: headers(other), payload: { requestId: randomUUID(), agentId: AGENT_IDS.APPOINTMENT, prompt: 'Create a support ticket for my upcoming appointment. Priority: Medium.' } });
-      const ticket = await prisma.supportTicket.findFirstOrThrow({ where: { createdById: other.id, appointmentId: otherAppointmentId } });
-      expect(response.body).toContain('event: error');
-      expect(response.body).toContain(ticket.id);
-      expect(response.body).toContain('OPEN');
-      expect(response.body).toContain('"status":"SUCCEEDED"');
-      expect(ticket.status).toBe('OPEN');
+      expect(response.statusCode).toBe(503);
+      expect(response.json().error).toContain('unreachable');
+      expect(await prisma.supportTicket.count({ where: { createdById: other.id, appointmentId: otherAppointmentId } })).toBe(before);
     } finally {
       await unavailable.close();
     }

@@ -234,21 +234,19 @@ export async function adminRoutes(fastify: FastifyInstance) {
         });
       }
 
-      return doc;
-    });
-
-    try {
-      await prisma.auditLog.create({
+      await tx.auditLog.create({
         data: {
           userId: req.authUser!.id,
           action: 'CREATE_DOCTOR',
           resource: 'Doctor',
-          resourceId: doctor.id,
+          resourceId: doc.id,
           details: JSON.stringify({ name: data.name, licenseNumber: data.licenseNumber }),
           ipAddress: req.ip,
         },
       });
-    } catch {}
+
+      return doc;
+    });
 
     return reply.status(201).send({
       message: `Doctor ${doctor.user.name} created successfully.`,
@@ -309,10 +307,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
           isActive: isActive !== undefined ? isActive : undefined,
         },
       });
-    });
-
-    try {
-      await prisma.auditLog.create({
+      await tx.auditLog.create({
         data: {
           userId: req.authUser!.id,
           action: 'UPDATE_DOCTOR',
@@ -322,7 +317,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
           ipAddress: req.ip,
         },
       });
-    } catch {}
+    });
 
     return { message: 'Doctor profile updated successfully.' };
   });
@@ -374,26 +369,26 @@ export async function adminRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Doctor or Patient record not found.' });
     }
 
-    const assignment = await prisma.doctorPatientAssignment.upsert({
-      where: {
-        doctorId_patientId: { doctorId, patientId },
-      },
-      update: {
-        active,
-        notes: notes ?? undefined,
-        assignedBy: req.authUser!.id,
-      },
-      create: {
-        doctorId,
-        patientId,
-        assignedBy: req.authUser!.id,
-        notes: notes || `Care assignment created by administrator.`,
-        active,
-      },
-    });
+    const assignment = await prisma.$transaction(async (tx) => {
+      const assignment = await tx.doctorPatientAssignment.upsert({
+        where: {
+          doctorId_patientId: { doctorId, patientId },
+        },
+        update: {
+          active,
+          notes: notes ?? undefined,
+          assignedBy: req.authUser!.id,
+        },
+        create: {
+          doctorId,
+          patientId,
+          assignedBy: req.authUser!.id,
+          notes: notes || `Care assignment created by administrator.`,
+          active,
+        },
+      });
 
-    try {
-      await prisma.auditLog.create({
+      await tx.auditLog.create({
         data: {
           userId: req.authUser!.id,
           action: 'ASSIGN_PATIENT_DOCTOR',
@@ -403,7 +398,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
           ipAddress: req.ip,
         },
       });
-    } catch {}
+      return assignment;
+    });
 
     return {
       message: `Successfully assigned ${patient.user.name} to ${doctor.user.name}.`,

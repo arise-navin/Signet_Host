@@ -85,6 +85,7 @@ describe('Phase 4: Admin Dashboard & Management Suite', () => {
       headers: { authorization: adminToken },
       payload: {
         name: 'Dr. Test Specialist',
+        password: 'Synthetic-test-password123!',
         email: uniqueEmail,
         departmentId: dept.id,
         specialization: 'Preventive Cardiology',

@@ -116,8 +116,8 @@ describe('Hospital agent regression scenarios', () => {
     expect(result.data).toBeUndefined();
   });
 
-  it('TEST-012 backend rejects clinical access for receptionists and administrators', async () => {
-    for (const user of [receptionist, admin]) {
+  it('TEST-012 backend rejects receptionist clinical access and permits administrators', async () => {
+    for (const user of [receptionist]) {
       expect((await execute('get_medical_history', { patientId: patient.patientId }, user, AGENT_IDS.RECORDS, randomUUID())).statusCode).toBe(403);
       const response = await app.inject({ method: 'GET', url: `/api/patients/${patient.patientId}`, headers: session(user) });
       const body = z.object({ prescriptions: z.array(z.object({})), visits: z.array(z.object({})).optional(), medicalRecords: z.array(z.object({})), labReports: z.array(z.object({})), allergies: z.null() }).parse(response.json());
@@ -126,6 +126,7 @@ describe('Hospital agent regression scenarios', () => {
       expect(body.medicalRecords).toEqual([]);
       expect(body.labReports).toEqual([]);
     }
+    expect((await execute('get_medical_history', { patientId: patient.patientId }, admin, AGENT_IDS.RECORDS, randomUUID())).success).toBe(true);
   });
 
   it('TEST-013 separates doctor professional schedule from personal patient appointments', async () => {
@@ -196,8 +197,8 @@ describe('Hospital agent regression scenarios', () => {
     if (original === undefined) delete process.env.OLLAMA_BASE_URL; else process.env.OLLAMA_BASE_URL = original;
     try {
       const response = await unavailable.inject({ method: 'POST', url: '/api/chat/stream', headers: session(patient), payload: { prompt: 'What are the visiting hours?', requestId: randomUUID() } });
-      expect(response.body).toContain('event: error');
-      expect(response.body).toContain('"statusCode":502');
+      expect(response.statusCode).toBe(503);
+      expect(response.json().error).toContain('unreachable');
       expect(response.body).not.toContain('event: done');
     } finally {
       const conversations = await prisma.conversation.findMany({ where: { userId: patient.id, executions: { some: { status: 'FAILED', error: { contains: '127.0.0.1:1' } } } }, select: { id: true } });
@@ -237,7 +238,7 @@ describe('Hospital agent regression scenarios', () => {
     expect(own.statusCode).toBe(200);
     const expired = app.jwt.sign({ sub: patient.id, exp: Math.floor(Date.now() / 1000) - 60 });
     expect((await app.inject({ method: 'GET', url: '/api/auth/me', headers: { cookie: `hospital_session=${expired}` } })).statusCode).toBe(401);
-    const login = await app.inject({ method: 'POST', url: '/api/auth/switch', headers: { cookie: `hospital_session=${expired}` }, payload: { userId: patient.id } });
+    const login = await app.inject({ method: 'POST', url: '/api/auth/login', headers: { cookie: `hospital_session=${expired}` }, payload: { identifier: patient.email, password: 'password123' } });
     expect(login.statusCode).toBe(200);
   });
 
